@@ -1,0 +1,17 @@
+{
+  "name": "DecoraFoto",
+  "short_name": "DecoraFoto",
+  "description": "Saca una foto de tu espacio y pruébalo con otros colores, materiales, estilos y muebles.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0f1419",
+  "theme_color": "#0f1419",
+  "lang": "es",
+  "icons": [
+    { "src": "./assets/icono-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./assets/icono-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./assets/icono-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

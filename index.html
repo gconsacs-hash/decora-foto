@@ -1,0 +1,187 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#0f1419">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>DecoraFoto</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" href="./assets/icono-192.png">
+  <link rel="apple-touch-icon" href="./assets/icono-192.png">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+
+<header class="barra">
+  <div class="logo">🎨 <span>DecoraFoto</span></div>
+  <div class="acciones">
+    <button id="btn-proyectos" class="icono" title="Mis proyectos">🗂️</button>
+    <label class="icono" title="Nueva foto">📷<input id="foto-camara-barra" type="file" accept="image/*" capture="environment" hidden></label>
+  </div>
+</header>
+
+<!-- ================= INICIO ================= -->
+<main id="inicio" class="pantalla">
+  <section class="hero">
+    <h1>Decora tu espacio a partir de una foto</h1>
+    <p>Saca una foto de la pared, pieza, patio o fachada. Pinta superficies con colores y materiales, prueba estilos y agrega muebles, plantas y luces para ver cómo quedaría.</p>
+    <label class="boton grande primario">📷 Tomar foto<input id="foto-camara" type="file" accept="image/*" capture="environment" hidden></label>
+    <label class="boton grande">🖼️ Elegir de la galería<input id="foto-galeria" type="file" accept="image/*" hidden></label>
+  </section>
+
+  <section class="pasos">
+    <div class="paso"><b>1</b><span>Toca una pared o el piso para pintarlo. Respeta las sombras y la luz de tu foto.</span></div>
+    <div class="paso"><b>2</b><span>Elige un estilo y genera 6 alternativas de color para comparar.</span></div>
+    <div class="paso"><b>3</b><span>Agrega muebles, plantas y luces; compara antes/después y comparte.</span></div>
+  </section>
+
+  <section id="seccion-proyectos" hidden>
+    <h2>Mis proyectos</h2>
+    <div id="lista-proyectos" class="rejilla-proyectos"></div>
+  </section>
+
+  <p class="nota">Todo se procesa en tu teléfono: no sube fotos a ningún servicio ni necesita internet.</p>
+</main>
+
+<!-- ================= EDITOR ================= -->
+<main id="editor" class="pantalla" hidden>
+  <div id="escenario" class="escenario">
+    <div id="vista" class="vista">
+      <canvas id="lienzo-base"></canvas>
+      <canvas id="lienzo-elementos"></canvas>
+    </div>
+    <div class="flotantes izquierda">
+      <button id="btn-deshacer" title="Deshacer" disabled>↶</button>
+      <button id="btn-rehacer" title="Rehacer" disabled>↷</button>
+    </div>
+    <div class="flotantes derecha">
+      <button id="btn-antes" title="Mantén presionado para ver la foto original">👁️ Antes</button>
+      <button id="btn-zoom" title="Restablecer zoom" hidden>⤢</button>
+    </div>
+    <div id="ayuda-toque" class="ayuda-toque"></div>
+    <input id="divisor" class="divisor" type="range" min="0" max="100" value="50" hidden>
+  </div>
+
+  <div id="panel" class="panel">
+
+    <!-- PINTAR -->
+    <section data-panel="pintar">
+      <div class="fila">
+        <div id="lista-capas" class="chips"></div>
+      </div>
+      <div class="fila">
+        <div id="modo-pintar" class="segmento">
+          <button data-modo="varita+" class="activa" title="Toca una superficie para seleccionarla">✨ Varita</button>
+          <button data-modo="varita-" title="Toca una zona para quitarla">✨ Quitar</button>
+          <button data-modo="pincel+" title="Pinta a mano">🖌️ Pincel</button>
+          <button data-modo="pincel-" title="Borra a mano">🧽 Borrar</button>
+        </div>
+      </div>
+      <label class="deslizador" id="fila-tolerancia"><span>Tolerancia</span><input id="tolerancia" type="range" min="5" max="100" value="25"><output>25</output></label>
+      <label class="deslizador" id="fila-pincel" hidden><span>Tamaño</span><input id="tam-pincel" type="range" min="5" max="150" value="40"><output>40</output></label>
+      <div id="propiedades-capa" hidden>
+        <div class="fila"><span class="etiqueta">Es</span><div id="tipo-capa" class="chips"></div></div>
+        <div class="fila"><span class="etiqueta">Color</span><div id="colores-capa" class="chips colores"></div><label class="chip color-personalizado" title="Otro color">🎨<input id="color-personalizado" type="color"></label></div>
+        <div class="fila"><span class="etiqueta">Material</span><div id="materiales" class="chips"></div></div>
+        <label class="deslizador"><span>Intensidad</span><input id="intensidad" type="range" min="20" max="100" value="100"><output>100</output></label>
+        <label class="deslizador" id="fila-escala" hidden><span>Tamaño textura</span><input id="escala-textura" type="range" min="8" max="120" value="35"><output>35</output></label>
+        <div class="fila"><button id="btn-eliminar-capa" class="boton peligro">🗑️ Quitar superficie</button></div>
+      </div>
+    </section>
+
+    <!-- DECORAR -->
+    <section data-panel="decorar" hidden>
+      <div id="herramientas-elemento" class="herramientas" hidden>
+        <div class="fila"><span class="etiqueta">Color</span><div id="colores-elemento" class="chips colores"></div><label class="chip color-personalizado">🎨<input id="color-elemento" type="color"></label></div>
+        <div class="fila botones-elemento">
+          <button data-accion="menor" title="Más pequeño">➖</button>
+          <button data-accion="mayor" title="Más grande">➕</button>
+          <button data-accion="rotar-izq" title="Girar">↺</button>
+          <button data-accion="rotar-der" title="Girar">↻</button>
+          <button data-accion="voltear" title="Voltear">⇋</button>
+          <button data-accion="adelante" title="Traer al frente">⬆️</button>
+          <button data-accion="atras" title="Enviar atrás">⬇️</button>
+          <button data-accion="sombra" title="Sombra">🌗</button>
+          <button data-accion="duplicar" title="Duplicar">⧉</button>
+          <button data-accion="eliminar" class="peligro" title="Eliminar">🗑️</button>
+        </div>
+      </div>
+      <div id="categorias" class="chips"></div>
+      <div id="rejilla-elementos" class="rejilla-elementos"></div>
+    </section>
+
+    <!-- ESTILOS -->
+    <section data-panel="estilos" hidden>
+      <div id="tarjetas-estilos" class="tarjetas-estilos"></div>
+      <div id="detalle-estilo" class="detalle-estilo"></div>
+      <div class="fila">
+        <button id="btn-alternativas" class="boton primario">✨ Ver 6 alternativas</button>
+        <button id="btn-aplicar-estilo" class="boton">Aplicar estilo</button>
+      </div>
+    </section>
+
+    <!-- IDEAS -->
+    <section data-panel="ideas" hidden>
+      <div id="contenido-ideas"></div>
+    </section>
+
+    <!-- LUZ -->
+    <section data-panel="luz" hidden>
+      <label class="deslizador"><span>Brillo</span><input id="brillo" type="range" min="-60" max="60" value="0"><output>0</output></label>
+      <label class="deslizador"><span>Calidez</span><input id="calidez" type="range" min="-60" max="60" value="0"><output>0</output></label>
+      <p class="ayuda">Simula más luz o un tono más cálido/frío para ver cómo cambia el ambiente. Se aplica a toda la foto.</p>
+      <div class="fila"><button id="btn-luz-reset" class="boton">Restablecer</button></div>
+    </section>
+
+    <!-- GUARDAR -->
+    <section data-panel="guardar" hidden>
+      <div class="fila acciones-guardar">
+        <button id="btn-comparar" class="boton">↔️ Comparar antes / después</button>
+        <button id="btn-descargar" class="boton primario">⬇️ Descargar imagen</button>
+        <button id="btn-compartir" class="boton">📤 Compartir</button>
+        <button id="btn-guardar-proyecto" class="boton">💾 Guardar proyecto</button>
+        <button id="btn-nueva-foto" class="boton">📷 Nueva foto</button>
+      </div>
+      <p class="ayuda">La imagen se guarda en tus Descargas. «Compartir» abre WhatsApp, Drive, correo, etc. El proyecto guarda la foto con sus capas para seguir editando después.</p>
+    </section>
+  </div>
+
+  <nav class="pestanas">
+    <button data-tab="pintar" class="activa">🖌️<span>Pintar</span></button>
+    <button data-tab="decorar">🪴<span>Decorar</span></button>
+    <button data-tab="estilos">✨<span>Estilos</span></button>
+    <button data-tab="ideas">💡<span>Ideas</span></button>
+    <button data-tab="luz">☀️<span>Luz</span></button>
+    <button data-tab="guardar">💾<span>Guardar</span></button>
+  </nav>
+</main>
+
+<!-- Diálogo: alternativas -->
+<dialog id="dlg-alternativas">
+  <div class="cabecera-dialogo"><h3 id="titulo-alternativas">Alternativas</h3><button class="cerrar" data-cerrar>✕</button></div>
+  <p class="ayuda">Toca la que más te guste para aplicarla. Después puedes ajustar cada superficie en «Pintar».</p>
+  <div id="rejilla-alternativas" class="rejilla-alternativas"></div>
+</dialog>
+
+<!-- Diálogo: guardar proyecto -->
+<dialog id="dlg-guardar">
+  <div class="cabecera-dialogo"><h3>Guardar proyecto</h3><button class="cerrar" data-cerrar>✕</button></div>
+  <label class="campo">Nombre<input id="nombre-proyecto" type="text" maxlength="60" placeholder="Living, Pieza de Sofía, Fachada…"></label>
+  <div class="fila"><button id="btn-confirmar-guardar" class="boton primario">Guardar</button></div>
+</dialog>
+
+<!-- Diálogo: proyectos -->
+<dialog id="dlg-proyectos">
+  <div class="cabecera-dialogo"><h3>Mis proyectos</h3><button class="cerrar" data-cerrar>✕</button></div>
+  <div id="lista-proyectos-dialogo" class="rejilla-proyectos"></div>
+</dialog>
+
+<div id="aviso" class="aviso" hidden></div>
+<div id="cargando" class="cargando" hidden><div class="giro"></div><span>Procesando…</span></div>
+
+<script type="module" src="./app.js"></script>
+</body>
+</html>

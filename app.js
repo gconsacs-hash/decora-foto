@@ -1175,6 +1175,14 @@ document.addEventListener("keydown", (ev) => {
 });
 
 // ---------- Inicio ----------
+// Clave de IA por enlace: https://…/decora-foto/#clave=sk_… (el # no viaja al servidor). Se guarda y se limpia la dirección.
+(function importarClaveDesdeEnlace() {
+  const m = /[#&?]clave=([^&]+)/.exec(location.hash || "");
+  if (!m) return;
+  IA.guardarClave(decodeURIComponent(m[1]));
+  history.replaceState(null, "", location.pathname + location.search);
+  avisar("Clave de IA guardada en este teléfono. Ya puedes usar la pestaña 🤖 IA.", 5000);
+})();
 listarProyectosEnInicio();
 if ("serviceWorker" in navigator && location.protocol !== "file:") {
   navigator.serviceWorker.register("./sw.js").catch(() => {});

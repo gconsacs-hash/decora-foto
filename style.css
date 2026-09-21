@@ -176,6 +176,24 @@ h2 { font-size: 18px; margin: 0 0 10px; }
 .muestra { width: 30px; height: 30px; border-radius: 8px; border: 2px solid rgba(255,255,255,.15); cursor: pointer; padding: 0; }
 .muestra.activa { border-color: #fff; }
 
+/* IA */
+.bloque-ia { background: var(--panel2); border: 1px solid var(--borde); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+.bloque-ia a { color: var(--primario); }
+.bloque-ia input { flex: 1; min-width: 120px; background: var(--panel); border: 1px solid var(--borde); border-radius: 10px; padding: 9px 10px; color: var(--texto); }
+#panel select, #panel textarea { background: var(--panel2); border: 1px solid var(--borde); border-radius: 10px; padding: 9px 10px; color: var(--texto); font-size: 14px; }
+#panel select { flex: 1; min-width: 0; }
+#panel textarea { width: 100%; resize: vertical; font-family: inherit; }
+#ia-estado { flex: 1; }
+.rejilla-renders { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
+.rejilla-renders button { background: var(--panel2); border: 1px solid var(--borde); border-radius: 12px; padding: 4px; display: flex; flex-direction: column; gap: 4px; color: var(--suave); font-size: 11px; overflow: hidden; }
+.rejilla-renders img { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 8px; display: block; }
+.rejilla-renders span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.comparador { position: relative; width: 100%; border-radius: 12px; overflow: hidden; background: #000; user-select: none; }
+.comparador img { display: block; width: 100%; height: auto; }
+.comparador #render-despues { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; clip-path: inset(0 0 0 50%); }
+.comparador .linea { position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; background: #fff; box-shadow: 0 0 6px rgba(0,0,0,.6); pointer-events: none; }
+.divisor-render { width: 100%; accent-color: var(--acento); margin: 8px 0 4px; }
+
 /* Guardar */
 .acciones-guardar { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .acciones-guardar .boton { width: 100%; }

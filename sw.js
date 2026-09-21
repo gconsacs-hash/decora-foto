@@ -1,7 +1,7 @@
 /* Service worker: guarda los archivos de la app en el teléfono para que abra
    sin internet. Al cambiar VERSION se descarga todo de nuevo. */
 
-const VERSION = "decorafoto-v3";
+const VERSION = "decorafoto-v4";
 
 const ARCHIVOS = [
   "./",

@@ -27,15 +27,15 @@
 <main id="inicio" class="pantalla">
   <section class="hero">
     <h1>Decora tu espacio a partir de una foto</h1>
-    <p>Saca una foto de la pared, pieza, patio o fachada. Pinta superficies con colores y materiales, prueba estilos y agrega muebles, plantas y luces para ver cómo quedaría.</p>
+    <p>Saca una foto de la pieza, patio o fachada y <b>escribe qué quieres cambiar</b> ("pared verde oliva, piso de madera, un sofá gris y plantas"). La IA genera un render realista y puedes seguir pidiendo cambios sobre el resultado.</p>
     <label class="boton grande primario">📷 Tomar foto<input id="foto-camara" type="file" accept="image/*" capture="environment" hidden></label>
     <label class="boton grande">🖼️ Elegir de la galería<input id="foto-galeria" type="file" accept="image/*" hidden></label>
   </section>
 
   <section class="pasos">
-    <div class="paso"><b>1</b><span>Toca una pared o el piso para pintarlo. Respeta las sombras y la luz de tu foto.</span></div>
-    <div class="paso"><b>2</b><span>Elige un estilo y genera 6 alternativas de color para comparar.</span></div>
-    <div class="paso"><b>3</b><span>Agrega muebles, plantas y luces; compara antes/después y comparte.</span></div>
+    <div class="paso"><b>1</b><span>Toma la foto derecha y con buena luz, mostrando pared y piso.</span></div>
+    <div class="paso"><b>2</b><span>Escribe los cambios en tus palabras o toca las sugerencias; opcionalmente elige un estilo.</span></div>
+    <div class="paso"><b>3</b><span>Genera el render, compara antes/después, pide más cambios sobre el resultado y comparte.</span></div>
   </section>
 
   <section id="seccion-proyectos" hidden>
@@ -43,7 +43,7 @@
     <div id="lista-proyectos" class="rejilla-proyectos"></div>
   </section>
 
-  <p class="nota">Todo se procesa en tu teléfono: no sube fotos a ningún servicio ni necesita internet.</p>
+  <p class="nota">Los renders usan la API abierta de Pollinations (con pollen gratis). Las herramientas de pintar y los proyectos funcionan sin internet.</p>
 </main>
 
 <!-- ================= EDITOR ================= -->
@@ -123,31 +123,49 @@
       </div>
     </section>
 
-    <!-- IA -->
+    <!-- CAMBIOS (IA por texto) -->
     <section data-panel="ia" hidden>
-      <div id="ia-config" class="bloque-ia">
-        <p class="ayuda">Renders fotorrealistas con la API abierta de <b>Pollinations</b> (regala "pollen" gratis al crear la cuenta; sin tarjeta). Necesitas una clave: <a href="https://enter.pollinations.ai/keys" target="_blank" rel="noopener">enter.pollinations.ai/keys</a> → entrar con GitHub → <b>Create key</b> → copiarla aquí. Se guarda solo en este teléfono.</p>
+      <div id="ia-sin-clave" class="bloque-ia" hidden>
+        <p class="ayuda">Para generar renders necesitas una clave gratuita de <b>Pollinations</b>: <a href="https://enter.pollinations.ai/keys" target="_blank" rel="noopener">enter.pollinations.ai/keys</a> → entrar con GitHub → <b>Create key</b> → pegarla aquí. Se guarda solo en este teléfono.</p>
         <div class="fila">
-          <input id="ia-clave" type="password" placeholder="Clave (sk_… o pk_…)" autocomplete="off">
-          <button id="btn-ia-clave" class="boton">Guardar</button>
+          <input id="ia-clave" type="password" placeholder="Clave (sk_…)" autocomplete="off">
+          <button id="btn-ia-clave" class="boton primario">Guardar</button>
+        </div>
+      </div>
+
+      <div class="fila base-ia"><span class="etiqueta">Editar</span>
+        <div id="ia-fuente" class="segmento">
+          <button data-fuente="original" class="activa">Foto original</button>
+          <button data-fuente="render" id="btn-fuente-render" disabled title="Seguir editando el último render">Último render</button>
+          <button data-fuente="diseno" title="Usar la foto con lo que pintaste a mano">Foto pintada</button>
+        </div>
+      </div>
+
+      <textarea id="ia-texto" rows="3" placeholder="Escribe qué quieres cambiar. Ej.: pinta la pared del fondo de verde oliva, cambia el piso a madera clara, agrega un sofá gris con cojines y dos plantas grandes, más luz natural…"></textarea>
+      <div id="ia-sugerencias" class="chips"></div>
+      <div class="fila">
+        <button id="btn-ia-generar" class="boton primario grande-ia">🤖 Generar render</button>
+      </div>
+      <span id="ia-estado" class="ayuda"></span>
+
+      <details class="detalles-ia">
+        <summary>Opciones</summary>
+        <div class="fila"><span class="etiqueta">Espacio</span><select id="ia-espacio">
+          <option value="living room">Living</option><option value="bedroom">Dormitorio</option><option value="kitchen">Cocina</option><option value="bathroom">Baño</option><option value="dining room">Comedor</option><option value="home office">Oficina</option><option value="kids room">Pieza de niños</option><option value="hallway">Pasillo / entrada</option><option value="patio or terrace">Patio / terraza</option><option value="house facade">Fachada</option><option value="space" selected>Otro</option>
+        </select></div>
+        <div class="fila"><span class="etiqueta">Estilo</span><select id="ia-estilo"><option value="">(sin estilo: solo mis cambios)</option></select></div>
+        <div class="fila"><span class="etiqueta">Modelo</span><select id="ia-modelo"></select></div>
+        <label class="casilla"><input id="ia-mantener" type="checkbox" checked> Mantener los muebles y objetos que no mencione</label>
+        <label class="casilla"><input id="ia-traducir" type="checkbox" checked> Traducir mis instrucciones al inglés antes de enviar (mejor resultado)</label>
+        <div class="fila">
+          <input id="ia-clave-2" type="password" placeholder="Clave de Pollinations" autocomplete="off">
+          <button id="btn-ia-clave-2" class="boton">Guardar</button>
           <button id="btn-ia-saldo" class="boton">Saldo</button>
         </div>
         <span id="ia-saldo" class="ayuda"></span>
-      </div>
-      <div class="fila"><span class="etiqueta">Modelo</span><select id="ia-modelo"></select></div>
-      <div class="fila"><span class="etiqueta">Enviar</span>
-        <div id="ia-fuente" class="segmento">
-          <button data-fuente="original" class="activa" title="La IA rediseña la foto tal cual">Foto original</button>
-          <button data-fuente="diseno" title="La IA vuelve realista lo que pintaste y agregaste">Mi diseño actual</button>
-        </div>
-      </div>
-      <div class="fila"><span class="etiqueta">Estilo</span><select id="ia-estilo"></select></div>
-      <div class="fila"><span class="etiqueta">Espacio</span><select id="ia-espacio">
-        <option value="living room">Living</option><option value="bedroom">Dormitorio</option><option value="kitchen">Cocina</option><option value="bathroom">Baño</option><option value="dining room">Comedor</option><option value="home office">Oficina</option><option value="kids room">Pieza de niños</option><option value="hallway">Pasillo / entrada</option><option value="patio or terrace">Patio / terraza</option><option value="house facade">Fachada</option><option value="space" selected>Otro</option>
-      </select></div>
-      <textarea id="ia-extra" rows="2" placeholder="Instrucciones extra (opcional): ej. sofá gris, más plantas, piso de madera clara, cortinas blancas…"></textarea>
-      <div class="fila"><button id="btn-ia-generar" class="boton primario">🤖 Generar render</button><span id="ia-estado" class="ayuda"></span></div>
-      <p class="ayuda">Al generar, la foto se envía a Pollinations. Cada render descuenta pollen del saldo (Klein ≈ 0,005; Kontext ≈ 0,03). Demora 10–40 s.</p>
+        <p class="ayuda">Al generar, la foto se envía a Pollinations. Cada render descuenta pollen (Klein ≈ 0,005; Kontext ≈ 0,03). Demora 10–40 s.</p>
+      </details>
+
       <div id="ia-renders" class="rejilla-renders"></div>
     </section>
 
@@ -178,10 +196,9 @@
   </div>
 
   <nav class="pestanas">
-    <button data-tab="pintar" class="activa">🖌️<span>Pintar</span></button>
-    <button data-tab="decorar">🪴<span>Decorar</span></button>
+    <button data-tab="ia" class="activa">🤖<span>Cambios</span></button>
+    <button data-tab="pintar">🖌️<span>Pintar</span></button>
     <button data-tab="estilos">✨<span>Estilos</span></button>
-    <button data-tab="ia">🤖<span>IA</span></button>
     <button data-tab="ideas">💡<span>Ideas</span></button>
     <button data-tab="luz">☀️<span>Luz</span></button>
     <button data-tab="guardar">💾<span>Guardar</span></button>
@@ -213,9 +230,10 @@
   <input id="render-divisor" type="range" min="0" max="100" value="50" class="divisor-render">
   <p class="ayuda">Izquierda: lo que se envió · Derecha: render de la IA. Mueve el control para comparar.</p>
   <div class="fila acciones-guardar">
-    <button id="btn-render-descargar" class="boton primario">⬇️ Descargar</button>
+    <button id="btn-render-seguir" class="boton primario">✏️ Pedir más cambios sobre este render</button>
+    <button id="btn-render-descargar" class="boton">⬇️ Descargar</button>
     <button id="btn-render-compartir" class="boton">📤 Compartir</button>
-    <button id="btn-render-base" class="boton">🖌️ Seguir decorando sobre este render</button>
+    <button id="btn-render-base" class="boton">🖌️ Pintar a mano sobre este render</button>
     <button id="btn-render-eliminar" class="boton peligro">🗑️ Eliminar</button>
   </div>
 </dialog>

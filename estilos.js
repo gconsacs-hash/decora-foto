@@ -3,7 +3,7 @@
 
 export const ESTILOS = [
   {
-    clave: "nordico", nombre: "Nórdico", emoji: "🌿",
+    clave: "nordico", nombre: "Nórdico", emoji: "🌿", nombreIngles: "Scandinavian", ia: "white and warm off-white walls, light oak wood, cozy wool textiles, green plants, simple functional furniture, lots of natural light",
     descripcion: "Claro, sencillo y acogedor: blancos, maderas claras y toques verdes.",
     paredes: ["#f4f1ea", "#ffffff", "#e8e4dc", "#d9dfd8", "#c9d3cf", "#9fb3a8"],
     texturasPared: ["liso"],
@@ -17,7 +17,7 @@ export const ESTILOS = [
     ],
   },
   {
-    clave: "minimalista", nombre: "Minimalista", emoji: "▫️",
+    clave: "minimalista", nombre: "Minimalista", emoji: "▫️", nombreIngles: "Minimalist", ia: "clean lines, neutral palette of white, grey and black, very few objects, hidden storage, uncluttered surfaces, one statement piece",
     descripcion: "Pocos elementos, líneas limpias y una paleta neutra.",
     paredes: ["#ffffff", "#f5f5f5", "#e6e6e6", "#d5d5d5", "#bdbdbd", "#1f1f1f"],
     texturasPared: ["liso"],
@@ -31,7 +31,7 @@ export const ESTILOS = [
     ],
   },
   {
-    clave: "moderno", nombre: "Moderno", emoji: "🏙️",
+    clave: "moderno", nombre: "Moderno", emoji: "🏙️", nombreIngles: "Modern contemporary", ia: "grey and deep blue tones with one bold accent color, straight-lined furniture, layered lighting, large TV wall, sleek materials",
     descripcion: "Grises y azules profundos con acentos vivos y muebles de líneas rectas.",
     paredes: ["#e9ecef", "#cfd6dd", "#5b6770", "#2c3e50", "#ffffff", "#7f8c8d"],
     texturasPared: ["liso", "liso", "concreto"],
@@ -45,7 +45,7 @@ export const ESTILOS = [
     ],
   },
   {
-    clave: "industrial", nombre: "Industrial", emoji: "🏭",
+    clave: "industrial", nombre: "Industrial", emoji: "🏭", nombreIngles: "Industrial loft", ia: "exposed brick wall, raw concrete, black metal frames, reclaimed wood, Edison filament bulbs, leather sofa",
     descripcion: "Ladrillo, concreto, metal negro y madera envejecida.",
     paredes: ["#a34a3a", "#8a8d91", "#5c5f63", "#b8b2a8", "#3d3f42", "#c98b6a"],
     texturasPared: ["ladrillo", "concreto", "liso", "liso", "liso", "ladrillo"],
@@ -59,7 +59,7 @@ export const ESTILOS = [
     ],
   },
   {
-    clave: "boho", nombre: "Boho", emoji: "🪶",
+    clave: "boho", nombre: "Boho", emoji: "🪶", nombreIngles: "Bohemian", ia: "terracotta and earthy tones, rattan and macrame, layered rugs and cushions, many plants at different heights, warm string lights",
     descripcion: "Tierra, terracota, fibras naturales y muchas plantas.",
     paredes: ["#f3e9d8", "#e8cfae", "#d9a066", "#c88a5a", "#b9a58a", "#f7f1e6"],
     texturasPared: ["liso"],
@@ -73,7 +73,7 @@ export const ESTILOS = [
     ],
   },
   {
-    clave: "mediterraneo", nombre: "Mediterráneo", emoji: "🌊",
+    clave: "mediterraneo", nombre: "Mediterráneo", emoji: "🌊", nombreIngles: "Mediterranean", ia: "whitewashed walls, sea blue accents, terracotta tiles, arches, olive trees, linen curtains, ceramic vases",
     descripcion: "Blanco cal, azules del mar, terracota y verde oliva.",
     paredes: ["#f6f0e4", "#ffffff", "#d9e8f0", "#2e5f8a", "#e9d8b8", "#a7c4d6"],
     texturasPared: ["liso"],
@@ -87,7 +87,7 @@ export const ESTILOS = [
     ],
   },
   {
-    clave: "rustico", nombre: "Rústico", emoji: "🪵",
+    clave: "rustico", nombre: "Rústico", emoji: "🪵", nombreIngles: "Rustic farmhouse", ia: "dark solid wood, stone and brick, warm earthy cream walls, heavy wooden furniture, warm 2700K lighting, woven baskets",
     descripcion: "Maderas oscuras, piedra y tonos tierra cálidos.",
     paredes: ["#e8dcc5", "#cbb79a", "#a88b64", "#7a5a3c", "#f1e9d9", "#6b4e35"],
     texturasPared: ["liso", "liso", "ladrillo", "madera", "liso", "madera"],
@@ -101,7 +101,7 @@ export const ESTILOS = [
     ],
   },
   {
-    clave: "tropical", nombre: "Tropical", emoji: "🌴",
+    clave: "tropical", nombre: "Tropical", emoji: "🌴", nombreIngles: "Tropical", ia: "deep green accent wall, white fresh walls, rattan and bamboo furniture, large leafy plants, coral and mustard accents",
     descripcion: "Verdes intensos, blanco fresco y detalles en coral y mostaza.",
     paredes: ["#ffffff", "#e6f2e6", "#2f7d5b", "#f2d16b", "#f6e7d2", "#1f5f4a"],
     texturasPared: ["liso"],
@@ -115,7 +115,7 @@ export const ESTILOS = [
     ],
   },
   {
-    clave: "clasico", nombre: "Clásico", emoji: "🏛️",
+    clave: "clasico", nombre: "Clásico", emoji: "🏛️", nombreIngles: "Classic elegant", ia: "cream walls with mouldings, noble dark wood, gold-framed mirror, symmetrical layout, long curtains to the floor, tufted armchair",
     descripcion: "Elegante y atemporal: cremas, dorados y maderas nobles.",
     paredes: ["#f2ead7", "#d9cbb0", "#b9a48a", "#7d8a97", "#dfe4e8", "#5d4a3a"],
     texturasPared: ["liso"],
@@ -129,7 +129,7 @@ export const ESTILOS = [
     ],
   },
   {
-    clave: "infantil", nombre: "Infantil", emoji: "🧸",
+    clave: "infantil", nombre: "Infantil", emoji: "🧸", nombreIngles: "Kids room", ia: "soft pastel walls, playful colorful accessories, low shelves with toys, cozy rug, string lights, safe rounded furniture",
     descripcion: "Pasteles alegres y elementos lúdicos para una pieza de niños.",
     paredes: ["#fff7e0", "#ffe0e6", "#dff3ff", "#e5f6e0", "#f3e6ff", "#ffd8a8"],
     texturasPared: ["liso"],
@@ -143,7 +143,7 @@ export const ESTILOS = [
     ],
   },
   {
-    clave: "vibrante", nombre: "Vibrante", emoji: "🎨",
+    clave: "vibrante", nombre: "Vibrante", emoji: "🎨", nombreIngles: "Bold colorful", ia: "one wall in a saturated bold color, other walls neutral, white furniture, colorful abstract art and cushions repeating the accent color",
     descripcion: "Colores intensos y contrastes atrevidos para espacios con personalidad.",
     paredes: ["#f4a261", "#e76f51", "#2a9d8f", "#264653", "#e9c46a", "#8e44ad"],
     texturasPared: ["liso"],
@@ -157,7 +157,7 @@ export const ESTILOS = [
     ],
   },
   {
-    clave: "exterior", nombre: "Exterior / patio", emoji: "🏡",
+    clave: "exterior", nombre: "Exterior / patio", emoji: "🏡", nombreIngles: "Outdoor patio and facade", ia: "light facade with a contrasting door color, large planters with greenery, outdoor wooden bench, string lights, tidy paving",
     descripcion: "Fachadas, terrazas y patios: tonos de fachada, verde y madera de exterior.",
     paredes: ["#ffffff", "#e8e2d3", "#cfc6b3", "#8d9c8c", "#4a5a6a", "#a8b5a0"],
     texturasPared: ["liso", "liso", "concreto", "liso", "liso", "ladrillo"],

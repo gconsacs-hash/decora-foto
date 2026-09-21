@@ -123,6 +123,34 @@
       </div>
     </section>
 
+    <!-- IA -->
+    <section data-panel="ia" hidden>
+      <div id="ia-config" class="bloque-ia">
+        <p class="ayuda">Renders fotorrealistas con la API abierta de <b>Pollinations</b> (regala "pollen" gratis al crear la cuenta; sin tarjeta). Necesitas una clave: <a href="https://enter.pollinations.ai/keys" target="_blank" rel="noopener">enter.pollinations.ai/keys</a> → entrar con GitHub → <b>Create key</b> → copiarla aquí. Se guarda solo en este teléfono.</p>
+        <div class="fila">
+          <input id="ia-clave" type="password" placeholder="Clave (sk_… o pk_…)" autocomplete="off">
+          <button id="btn-ia-clave" class="boton">Guardar</button>
+          <button id="btn-ia-saldo" class="boton">Saldo</button>
+        </div>
+        <span id="ia-saldo" class="ayuda"></span>
+      </div>
+      <div class="fila"><span class="etiqueta">Modelo</span><select id="ia-modelo"></select></div>
+      <div class="fila"><span class="etiqueta">Enviar</span>
+        <div id="ia-fuente" class="segmento">
+          <button data-fuente="original" class="activa" title="La IA rediseña la foto tal cual">Foto original</button>
+          <button data-fuente="diseno" title="La IA vuelve realista lo que pintaste y agregaste">Mi diseño actual</button>
+        </div>
+      </div>
+      <div class="fila"><span class="etiqueta">Estilo</span><select id="ia-estilo"></select></div>
+      <div class="fila"><span class="etiqueta">Espacio</span><select id="ia-espacio">
+        <option value="living room">Living</option><option value="bedroom">Dormitorio</option><option value="kitchen">Cocina</option><option value="bathroom">Baño</option><option value="dining room">Comedor</option><option value="home office">Oficina</option><option value="kids room">Pieza de niños</option><option value="hallway">Pasillo / entrada</option><option value="patio or terrace">Patio / terraza</option><option value="house facade">Fachada</option><option value="space" selected>Otro</option>
+      </select></div>
+      <textarea id="ia-extra" rows="2" placeholder="Instrucciones extra (opcional): ej. sofá gris, más plantas, piso de madera clara, cortinas blancas…"></textarea>
+      <div class="fila"><button id="btn-ia-generar" class="boton primario">🤖 Generar render</button><span id="ia-estado" class="ayuda"></span></div>
+      <p class="ayuda">Al generar, la foto se envía a Pollinations. Cada render descuenta pollen del saldo (Klein ≈ 0,005; Kontext ≈ 0,03). Demora 10–40 s.</p>
+      <div id="ia-renders" class="rejilla-renders"></div>
+    </section>
+
     <!-- IDEAS -->
     <section data-panel="ideas" hidden>
       <div id="contenido-ideas"></div>
@@ -153,6 +181,7 @@
     <button data-tab="pintar" class="activa">🖌️<span>Pintar</span></button>
     <button data-tab="decorar">🪴<span>Decorar</span></button>
     <button data-tab="estilos">✨<span>Estilos</span></button>
+    <button data-tab="ia">🤖<span>IA</span></button>
     <button data-tab="ideas">💡<span>Ideas</span></button>
     <button data-tab="luz">☀️<span>Luz</span></button>
     <button data-tab="guardar">💾<span>Guardar</span></button>
@@ -171,6 +200,24 @@
   <div class="cabecera-dialogo"><h3>Guardar proyecto</h3><button class="cerrar" data-cerrar>✕</button></div>
   <label class="campo">Nombre<input id="nombre-proyecto" type="text" maxlength="60" placeholder="Living, Pieza de Sofía, Fachada…"></label>
   <div class="fila"><button id="btn-confirmar-guardar" class="boton primario">Guardar</button></div>
+</dialog>
+
+<!-- Diálogo: visor de render IA -->
+<dialog id="dlg-render">
+  <div class="cabecera-dialogo"><h3 id="titulo-render">Render con IA</h3><button class="cerrar" data-cerrar>✕</button></div>
+  <div class="comparador" id="comparador-render">
+    <img id="render-antes" alt="Antes">
+    <img id="render-despues" alt="Render">
+    <div id="render-linea" class="linea"></div>
+  </div>
+  <input id="render-divisor" type="range" min="0" max="100" value="50" class="divisor-render">
+  <p class="ayuda">Izquierda: lo que se envió · Derecha: render de la IA. Mueve el control para comparar.</p>
+  <div class="fila acciones-guardar">
+    <button id="btn-render-descargar" class="boton primario">⬇️ Descargar</button>
+    <button id="btn-render-compartir" class="boton">📤 Compartir</button>
+    <button id="btn-render-base" class="boton">🖌️ Seguir decorando sobre este render</button>
+    <button id="btn-render-eliminar" class="boton peligro">🗑️ Eliminar</button>
+  </div>
 </dialog>
 
 <!-- Diálogo: proyectos -->

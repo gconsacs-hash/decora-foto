@@ -62,6 +62,43 @@ export function armarPrompt({ estilo, fuente, extra, tipoEspacio }) {
   return base + (ex ? ` Additional instructions: ${ex}.` : "") + cierre;
 }
 
+/* Prompt para el flujo principal: el usuario describe en texto los cambios que quiere.
+   instrucciones: ya en inglés (ver traducirInstrucciones) o en español si no se pudo traducir. */
+export function armarPromptCambios({ instrucciones, estilo, tipoEspacio, mantenerMuebles }) {
+  const espacio = tipoEspacio || "space";
+  const partes = [`Photo edit of a ${espacio}. Apply exactly these changes: ${instrucciones.trim().replace(/\s+/g, " ")}.`];
+  if (estilo) partes.push(`Overall style: ${estilo.nombreIngles} (${estilo.ia}).`);
+  partes.push("Keep the same room geometry, camera angle, perspective, windows and doors.");
+  if (mantenerMuebles) partes.push("Keep all existing furniture and objects that are not mentioned.");
+  partes.push("Photorealistic, natural lighting, high quality, no text, no watermark.");
+  return partes.join(" ");
+}
+
+// Convierte las instrucciones en español a inglés conciso con el modelo de texto (costo ínfimo).
+export async function traducirInstrucciones(clave, texto) {
+  const cuerpo = {
+    model: "openai",
+    max_tokens: 200,
+    messages: [
+      { role: "system", content: "You turn a Spanish request for changes to a photo of a room, patio or facade into a concise English image-editing instruction list. Keep every requested change, color and material; do not add ideas. Output only the English text, no quotes." },
+      { role: "user", content: texto },
+    ],
+  };
+  const control = new AbortController();
+  const t = setTimeout(() => control.abort(), 20000);
+  try {
+    const r = await fetch(`${URL_API}/v1/chat/completions`, {
+      method: "POST", signal: control.signal,
+      headers: { Authorization: `Bearer ${clave}`, "Content-Type": "application/json" },
+      body: JSON.stringify(cuerpo),
+    });
+    if (!r.ok) throw new Error("traducción " + r.status);
+    const j = await r.json();
+    const salida = j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content;
+    return salida ? String(salida).trim() : texto;
+  } finally { clearTimeout(t); }
+}
+
 function tamanoSalida(ancho, alto) {
   const f = Math.min(1, 1024 / Math.max(ancho, alto));
   const r16 = (v) => Math.max(256, Math.round(v * f / 16) * 16);

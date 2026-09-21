@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   --fondo: #0f1419;
   --panel: #171d26;
   --panel2: #1f2731;
@@ -110,6 +110,7 @@ h2 { font-size: 18px; margin: 0 0 10px; }
   flex: none; height: 40vh; overflow-y: auto; background: var(--panel);
   border-top: 1px solid var(--borde); padding: 10px 12px;
 }
+.panel.alto { height: 54vh; }
 .panel section { display: flex; flex-direction: column; gap: 10px; }
 .fila { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .etiqueta { color: var(--suave); font-size: 13px; min-width: 52px; }
@@ -184,6 +185,15 @@ h2 { font-size: 18px; margin: 0 0 10px; }
 #panel select { flex: 1; min-width: 0; }
 #panel textarea { width: 100%; resize: vertical; font-family: inherit; }
 #ia-estado { flex: 1; }
+#ia-texto { min-height: 84px; font-size: 15px; }
+.grande-ia { width: 100%; padding: 14px; font-size: 16px; }
+.detalles-ia { background: var(--panel2); border: 1px solid var(--borde); border-radius: 12px; padding: 8px 10px; }
+.detalles-ia summary { cursor: pointer; font-weight: 600; color: var(--suave); font-size: 13px; }
+.detalles-ia > *:not(summary) { margin-top: 8px; }
+.detalles-ia input[type=password] { flex: 1; min-width: 120px; background: var(--panel); border: 1px solid var(--borde); border-radius: 10px; padding: 9px 10px; color: var(--texto); }
+.casilla { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--suave); }
+.casilla input { accent-color: var(--primario); width: 18px; height: 18px; }
+.chip.sugerencia { background: transparent; }
 .rejilla-renders { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
 .rejilla-renders button { background: var(--panel2); border: 1px solid var(--borde); border-radius: 12px; padding: 4px; display: flex; flex-direction: column; gap: 4px; color: var(--suave); font-size: 11px; overflow: hidden; }
 .rejilla-renders img { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 8px; display: block; }

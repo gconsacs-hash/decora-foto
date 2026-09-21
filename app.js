@@ -27,7 +27,7 @@ const estado = {
   categoriaElementos: "sugeridos",
   recientes: [],
   cacheBase: null, // píxeles con pintura aplicada (antes de luz)
-  renders: [], iaFuente: "original", iaModelos: null, iaGenerando: false,
+  renders: [], iaFuente: "original", iaBaseRender: null, iaModelos: null, iaGenerando: false,
 };
 let contadorId = 1;
 const nuevoId = () => "c" + (contadorId++) + "_" + Date.now().toString(36);
@@ -143,12 +143,13 @@ function iniciarProyecto(imageData, datos = null, mantenerRenders = false) {
   divisor.hidden = true; $("#btn-comparar").classList.remove("activa");
   pantallaInicio.hidden = true; pantallaEditor.hidden = false;
   actualizarBotonesHistorial();
-  cambiarPestana("pintar");
+  estado.iaBaseRender = null; estado.iaFuente = "original";
+  cambiarPestana("ia");
   aplicarVista();
   ajustarVista();
   renderizar();
   refrescarPanel();
-  if (!datos) ayuda("Toca una pared o el piso para pintarlo");
+  if (!datos) ayuda("Escribe abajo qué quieres cambiar y toca Generar");
 }
 
 // ---------- Vista (zoom) ----------
@@ -534,6 +535,7 @@ lienzoEl.addEventListener("pointercancel", soltar);
 // ---------- Panel: pestañas ----------
 function cambiarPestana(nombre) {
   estado.pestana = nombre;
+  $("#panel").classList.toggle("alto", nombre === "ia");
   $$(".pestanas button").forEach((b) => b.classList.toggle("activa", b.dataset.tab === nombre));
   $$("#panel section").forEach((s) => { s.hidden = s.dataset.panel !== nombre; });
   if (nombre === "ideas") renderizarIdeas();
@@ -547,7 +549,7 @@ function cambiarPestana(nombre) {
     pintar: "Toca una pared o el piso para pintarlo",
     decorar: "Elige un elemento abajo; luego arrástralo o pellizca para ajustarlo",
     estilos: "Elige un estilo y genera alternativas de color",
-    ia: "Pide un render fotorrealista con IA de tu foto o de tu diseño",
+    ia: "Escribe los cambios que quieres y genera el render",
     ideas: "", luz: "", guardar: "",
   };
   ayuda(textos[nombre]);
@@ -921,7 +923,7 @@ $("#btn-confirmar-guardar").addEventListener("click", async () => {
     const miniatura = await exportarBlob("image/jpeg", 0.8, Math.min(1, 320 / estado.ancho));
     const id = estado.proyectoId || "p" + Date.now().toString(36);
     const capas = estado.capas.map((c) => Object.fromEntries(Object.entries(c).filter(([k]) => !k.startsWith("_"))));
-    const renders = estado.renders.map(({ id: rid, blob, modelo, estilo, fecha, fuente, prompt }) => ({ id: rid, blob, modelo, estilo, fecha, fuente, prompt }));
+    const renders = estado.renders.map(({ id: rid, blob, modelo, estilo, fecha, fuente, prompt, texto, baseId }) => ({ id: rid, blob, modelo, estilo, fecha, fuente, prompt, texto, baseId }));
     await db.guardarProyecto({ id, nombre, fecha: Date.now(), ancho: estado.ancho, alto: estado.alto, foto, miniatura, capas, luz: { ...estado.luz }, estilo: estado.estilo, renders });
     estado.proyectoId = id; estado.nombreProyecto = nombre;
     avisar(`Proyecto «${nombre}» guardado`);
@@ -973,17 +975,51 @@ async function listarProyectosEnDialogo() {
 }
 $("#btn-proyectos").addEventListener("click", () => { listarProyectosEnDialogo(); $("#dlg-proyectos").showModal(); });
 
-// ---------- Panel: IA (Pollinations) ----------
+// ---------- Panel: Cambios por texto (IA, Pollinations) ----------
+const SUGERENCIAS = [
+  "pinta las paredes de blanco", "una pared de acento en verde oliva", "piso de madera clara", "piso de cerámica gris",
+  "agrega un sofá gris con cojines", "agrega plantas grandes", "cuadros en la pared", "cortinas blancas de lino",
+  "lámpara colgante sobre la mesa", "más luz natural", "quita el desorden", "alfombra bajo el sofá",
+  "estantería de madera", "mesa de centro redonda", "espejo grande", "luces cálidas de noche",
+];
+
+function ultimoRender() { return estado.renders.length ? estado.renders[estado.renders.length - 1] : null; }
+function renderBase() { return estado.renders.find((r) => r.id === estado.iaBaseRender) || ultimoRender(); }
+
 function renderizarPanelIA() {
-  $("#ia-clave").value = IA.claveGuardada();
+  const clave = IA.claveGuardada();
+  $("#ia-sin-clave").hidden = !!clave;
+  $("#ia-clave").value = clave; $("#ia-clave-2").value = clave;
   const selEstilo = $("#ia-estilo");
-  if (!selEstilo.options.length) {
+  if (selEstilo.options.length <= 1) {
     for (const s of ESTILOS) { const o = document.createElement("option"); o.value = s.clave; o.textContent = `${s.emoji} ${s.nombre}`; selEstilo.appendChild(o); }
   }
-  selEstilo.value = estado.estilo;
-  $$("#ia-fuente button").forEach((b) => b.classList.toggle("activa", b.dataset.fuente === estado.iaFuente));
+  const sug = $("#ia-sugerencias");
+  if (!sug.children.length) {
+    for (const s of SUGERENCIAS) {
+      const b = document.createElement("button"); b.className = "chip sugerencia"; b.textContent = "+ " + s;
+      b.addEventListener("click", () => {
+        const t = $("#ia-texto"); const actual = t.value.trim();
+        t.value = actual ? actual.replace(/[.,;\s]+$/, "") + ", " + s : s;
+        t.focus();
+      });
+      sug.appendChild(b);
+    }
+  }
+  actualizarFuenteIA();
   cargarModelosIA();
   renderizarRenders();
+}
+
+function actualizarFuenteIA() {
+  const hayRender = !!ultimoRender();
+  const btnRender = $("#btn-fuente-render");
+  btnRender.disabled = !hayRender;
+  if (!hayRender && estado.iaFuente === "render") estado.iaFuente = "original";
+  const base = renderBase();
+  btnRender.textContent = base && estado.iaBaseRender && base !== ultimoRender() ? `Render ${estado.renders.indexOf(base) + 1}` : "Último render";
+  $$("#ia-fuente button").forEach((b) => b.classList.toggle("activa", b.dataset.fuente === estado.iaFuente));
+  $("#btn-ia-generar").textContent = estado.iaFuente === "render" ? "🤖 Aplicar cambios al render" : "🤖 Generar render";
 }
 
 async function cargarModelosIA() {
@@ -1005,21 +1041,26 @@ async function cargarModelosIA() {
 
 function renderizarRenders() {
   const cont = $("#ia-renders"); cont.innerHTML = "";
-  for (const r of [...estado.renders].reverse()) {
+  estado.renders.forEach((r, i) => {
     const b = document.createElement("button");
-    const est = estiloPorClave(r.estilo);
-    b.innerHTML = `<img src="${r.url}" alt=""><span>${est.emoji} ${est.nombre} · ${r.fuente === "diseno" ? "diseño" : "original"}</span>`;
+    const texto = r.texto || (r.estilo ? estiloPorClave(r.estilo).nombre : "render");
+    b.innerHTML = `<img src="${r.url}" alt=""><span title="${texto.replace(/"/g, "&quot;")}">${i + 1}. ${texto}</span>`;
     b.addEventListener("click", () => abrirRender(r.id));
-    cont.appendChild(b);
-  }
+    cont.prepend(b);
+  });
 }
 
-$("#btn-ia-clave").addEventListener("click", () => {
-  IA.guardarClave($("#ia-clave").value);
-  avisar(IA.claveGuardada() ? "Clave guardada en este teléfono" : "Clave borrada");
-});
+function guardarClaveDesde(idInput) {
+  IA.guardarClave($(idInput).value);
+  const clave = IA.claveGuardada();
+  $("#ia-clave").value = clave; $("#ia-clave-2").value = clave;
+  $("#ia-sin-clave").hidden = !!clave;
+  avisar(clave ? "Clave guardada en este teléfono" : "Clave borrada");
+}
+$("#btn-ia-clave").addEventListener("click", () => guardarClaveDesde("#ia-clave"));
+$("#btn-ia-clave-2").addEventListener("click", () => guardarClaveDesde("#ia-clave-2"));
 $("#btn-ia-saldo").addEventListener("click", async () => {
-  const clave = $("#ia-clave").value.trim();
+  const clave = $("#ia-clave-2").value.trim();
   if (!clave) { avisar("Pega primero la clave."); return; }
   IA.guardarClave(clave);
   const salida = $("#ia-saldo"); salida.textContent = "Consultando…";
@@ -1029,17 +1070,23 @@ $("#btn-ia-saldo").addEventListener("click", async () => {
     if (s.gratis != null) partes.push(`gratis ${Number(s.gratis).toFixed(3)}`);
     if (s.pagado != null) partes.push(`pagado ${Number(s.pagado).toFixed(3)}`);
     salida.textContent = partes.join(" · ") + ` (≈ ${Math.floor(Number(s.total) / 0.005)} renders con Klein)`;
-  } catch (e) { salida.textContent = e.message; }
+  } catch (e) { salida.textContent = e.message + (e.message.includes("saldo") ? " La clave necesita el permiso «Uso»; el saldo también se ve en enter.pollinations.ai." : ""); }
 });
 $("#ia-modelo").addEventListener("change", (ev) => IA.guardarModelo(ev.target.value));
-$("#ia-estilo").addEventListener("change", (ev) => { estado.estilo = ev.target.value; });
+$("#ia-estilo").addEventListener("change", (ev) => { if (ev.target.value) estado.estilo = ev.target.value; });
 $$("#ia-fuente button").forEach((b) => b.addEventListener("click", () => {
+  if (b.disabled) return;
   estado.iaFuente = b.dataset.fuente;
-  $$("#ia-fuente button").forEach((x) => x.classList.toggle("activa", x === b));
+  if (estado.iaFuente === "render" && !renderBase()) estado.iaFuente = "original";
+  actualizarFuenteIA();
 }));
 
-// Imagen que se envía: la foto original o la composición actual (pintura + elementos), reducida a 1024 px.
-function blobParaIA(fuente) {
+// Imagen que se envía: la foto original, el render base o la foto pintada a mano; reducida a 1024 px.
+async function blobParaIA(fuente, baseId) {
+  if (fuente === "render") {
+    const r = estado.renders.find((x) => x.id === baseId) || renderBase();
+    if (r) return r.blob;
+  }
   return new Promise((resolver) => {
     const f = Math.min(1, 1024 / Math.max(estado.ancho, estado.alto));
     const c = document.createElement("canvas");
@@ -1057,25 +1104,39 @@ function blobParaIA(fuente) {
 
 $("#btn-ia-generar").addEventListener("click", async () => {
   if (estado.iaGenerando) return;
-  const clave = $("#ia-clave").value.trim();
-  if (!clave) { avisar("Necesitas una clave de Pollinations (gratis). Ver el enlace de arriba."); $("#ia-clave").focus(); return; }
+  const clave = IA.claveGuardada() || $("#ia-clave").value.trim();
+  if (!clave) { $("#ia-sin-clave").hidden = false; avisar("Necesitas una clave gratuita de Pollinations: mira el recuadro de arriba."); $("#ia-clave").focus(); return; }
   IA.guardarClave(clave);
+  const texto = $("#ia-texto").value.trim();
+  const claveEstilo = $("#ia-estilo").value;
+  const estilo = claveEstilo ? estiloPorClave(claveEstilo) : null;
+  if (!texto && !estilo) { avisar("Escribe qué quieres cambiar (o elige un estilo en Opciones)."); $("#ia-texto").focus(); return; }
   const modelo = $("#ia-modelo").value;
-  const estilo = estiloPorClave($("#ia-estilo").value);
   const fuente = estado.iaFuente;
-  const prompt = IA.armarPrompt({ estilo, fuente, extra: $("#ia-extra").value, tipoEspacio: $("#ia-espacio").value });
+  const base = fuente === "render" ? renderBase() : null;
+  const tipoEspacio = $("#ia-espacio").value;
   const boton = $("#btn-ia-generar"), estadoTxt = $("#ia-estado");
   estado.iaGenerando = true; boton.disabled = true; boton.textContent = "⏳ Generando…";
-  estadoTxt.textContent = "Enviando la foto y esperando el render (10–40 s)…";
   const inicio = Date.now();
   const cronometro = setInterval(() => { estadoTxt.textContent = `Generando… ${Math.round((Date.now() - inicio) / 1000)} s`; }, 1000);
   try {
-    const blob = await blobParaIA(fuente);
+    let instrucciones = texto;
+    if (texto && $("#ia-traducir").checked) {
+      estadoTxt.textContent = "Preparando las instrucciones…";
+      try { instrucciones = await IA.traducirInstrucciones(clave, texto); } catch { instrucciones = texto; }
+    }
+    const prompt = texto
+      ? IA.armarPromptCambios({ instrucciones, estilo, tipoEspacio, mantenerMuebles: $("#ia-mantener").checked })
+      : IA.armarPrompt({ estilo, fuente: fuente === "diseno" ? "diseno" : "original", extra: "", tipoEspacio });
+    estadoTxt.textContent = "Enviando la foto y esperando el render (10–40 s)…";
+    const blob = await blobParaIA(fuente, base && base.id);
     const resultado = await IA.generarRender({ clave, modelo, blob, prompt, ancho: estado.ancho, alto: estado.alto });
-    const r = { id: nuevoId(), blob: resultado, url: URL.createObjectURL(resultado), modelo, estilo: estilo.clave, fuente, prompt, fecha: Date.now(), enviado: blob };
+    const r = { id: nuevoId(), blob: resultado, url: URL.createObjectURL(resultado), modelo, estilo: claveEstilo || "", fuente, prompt, texto: texto || (estilo ? `Estilo ${estilo.nombre}` : ""), baseId: base ? base.id : null, fecha: Date.now(), enviado: blob };
     estado.renders.push(r);
+    estado.iaBaseRender = null;
     renderizarRenders();
-    estadoTxt.textContent = `Listo en ${Math.round((Date.now() - inicio) / 1000)} s.`;
+    actualizarFuenteIA();
+    estadoTxt.textContent = `Listo en ${Math.round((Date.now() - inicio) / 1000)} s. Puedes pedir más cambios sobre este render.`;
     abrirRender(r.id);
   } catch (e) {
     console.error(e);
@@ -1083,19 +1144,28 @@ $("#btn-ia-generar").addEventListener("click", async () => {
     avisar(e.message || "No se pudo generar el render.", 5000);
   } finally {
     clearInterval(cronometro);
-    estado.iaGenerando = false; boton.disabled = false; boton.textContent = "🤖 Generar render";
+    estado.iaGenerando = false; boton.disabled = false; actualizarFuenteIA();
   }
 });
-
+$("#btn-render-seguir").addEventListener("click", () => {
+  if (!renderAbierto) return;
+  estado.iaBaseRender = renderAbierto.id;
+  estado.iaFuente = "render";
+  $("#dlg-render").close();
+  cambiarPestana("ia");
+  $("#ia-texto").value = "";
+  $("#ia-texto").focus();
+  avisar("Escribe los cambios que quieres sobre este render");
+});
 // Visor: comparar lo enviado con el render
 let renderAbierto = null;
 async function abrirRender(id) {
   const r = estado.renders.find((x) => x.id === id);
   if (!r) return;
   renderAbierto = r;
-  const est = estiloPorClave(r.estilo);
-  $("#titulo-render").textContent = `${est.emoji} ${est.nombre} · ${r.fuente === "diseno" ? "desde mi diseño" : "desde la foto original"}`;
-  if (!r.enviado) r.enviado = await blobParaIA(r.fuente);
+  const n = estado.renders.indexOf(r) + 1;
+  $("#titulo-render").textContent = `Render ${n}: ${r.texto || (r.estilo ? estiloPorClave(r.estilo).nombre : "")}`.slice(0, 90);
+  if (!r.enviado) r.enviado = await blobParaIA(r.fuente, r.baseId);
   const antes = $("#render-antes");
   if (antes.src) URL.revokeObjectURL(antes.src);
   antes.src = URL.createObjectURL(r.enviado);

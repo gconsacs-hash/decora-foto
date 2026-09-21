@@ -1,9 +1,10 @@
-﻿/* app.js — Interfaz y estado de DecoraFoto. */
+/* app.js — Interfaz y estado de DecoraFoto. */
 
 import * as P from "./procesar.js";
 import { ESTILOS, estiloPorClave, consejosSegunFoto } from "./estilos.js";
 import { ELEMENTOS, CATEGORIAS, urlElemento, proporcionElemento } from "./elementos.js";
 import * as db from "./db.js";
+import * as IA from "./ia.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -26,6 +27,7 @@ const estado = {
   categoriaElementos: "sugeridos",
   recientes: [],
   cacheBase: null, // píxeles con pintura aplicada (antes de luz)
+  renders: [], iaFuente: "original", iaModelos: null, iaGenerando: false,
 };
 let contadorId = 1;
 const nuevoId = () => "c" + (contadorId++) + "_" + Date.now().toString(36);
@@ -114,7 +116,11 @@ function cargarConImg(archivo) {
   });
 }
 
-function iniciarProyecto(imageData, datos = null) {
+function iniciarProyecto(imageData, datos = null, mantenerRenders = false) {
+  if (!mantenerRenders) {
+    estado.renders.forEach((r) => r.url && URL.revokeObjectURL(r.url));
+    estado.renders = datos && datos.renders ? datos.renders.map((r) => ({ ...r, url: URL.createObjectURL(r.blob) })) : [];
+  }
   estado.original = imageData;
   estado.ancho = imageData.width; estado.alto = imageData.height;
   estado.capas = datos ? datos.capas : [];
@@ -532,6 +538,7 @@ function cambiarPestana(nombre) {
   $$("#panel section").forEach((s) => { s.hidden = s.dataset.panel !== nombre; });
   if (nombre === "ideas") renderizarIdeas();
   if (nombre === "estilos") renderizarEstilos();
+  if (nombre === "ia") renderizarPanelIA();
   if (nombre === "decorar") { renderizarCategorias(); renderizarRejillaElementos(); }
   const sel = capaSeleccionada();
   if (nombre === "decorar" && sel && sel.tipo === "pintura") estado.seleccion = null;
@@ -540,6 +547,7 @@ function cambiarPestana(nombre) {
     pintar: "Toca una pared o el piso para pintarlo",
     decorar: "Elige un elemento abajo; luego arrástralo o pellizca para ajustarlo",
     estilos: "Elige un estilo y genera alternativas de color",
+    ia: "Pide un render fotorrealista con IA de tu foto o de tu diseño",
     ideas: "", luz: "", guardar: "",
   };
   ayuda(textos[nombre]);
@@ -913,7 +921,8 @@ $("#btn-confirmar-guardar").addEventListener("click", async () => {
     const miniatura = await exportarBlob("image/jpeg", 0.8, Math.min(1, 320 / estado.ancho));
     const id = estado.proyectoId || "p" + Date.now().toString(36);
     const capas = estado.capas.map((c) => Object.fromEntries(Object.entries(c).filter(([k]) => !k.startsWith("_"))));
-    await db.guardarProyecto({ id, nombre, fecha: Date.now(), ancho: estado.ancho, alto: estado.alto, foto, miniatura, capas, luz: { ...estado.luz }, estilo: estado.estilo });
+    const renders = estado.renders.map(({ id: rid, blob, modelo, estilo, fecha, fuente, prompt }) => ({ id: rid, blob, modelo, estilo, fecha, fuente, prompt }));
+    await db.guardarProyecto({ id, nombre, fecha: Date.now(), ancho: estado.ancho, alto: estado.alto, foto, miniatura, capas, luz: { ...estado.luz }, estilo: estado.estilo, renders });
     estado.proyectoId = id; estado.nombreProyecto = nombre;
     avisar(`Proyecto «${nombre}» guardado`);
   } catch (e) {
@@ -963,6 +972,180 @@ async function listarProyectosEnDialogo() {
   lista.forEach((p) => cont.appendChild(tarjetaProyecto(p)));
 }
 $("#btn-proyectos").addEventListener("click", () => { listarProyectosEnDialogo(); $("#dlg-proyectos").showModal(); });
+
+// ---------- Panel: IA (Pollinations) ----------
+function renderizarPanelIA() {
+  $("#ia-clave").value = IA.claveGuardada();
+  const selEstilo = $("#ia-estilo");
+  if (!selEstilo.options.length) {
+    for (const s of ESTILOS) { const o = document.createElement("option"); o.value = s.clave; o.textContent = `${s.emoji} ${s.nombre}`; selEstilo.appendChild(o); }
+  }
+  selEstilo.value = estado.estilo;
+  $$("#ia-fuente button").forEach((b) => b.classList.toggle("activa", b.dataset.fuente === estado.iaFuente));
+  cargarModelosIA();
+  renderizarRenders();
+}
+
+async function cargarModelosIA() {
+  const sel = $("#ia-modelo");
+  const pintar = (modelos) => {
+    sel.innerHTML = "";
+    for (const m of modelos) {
+      const o = document.createElement("option"); o.value = m.id;
+      o.textContent = m.nombre + (m.precio != null ? ` · ${m.precio} pollen` : "") + (m.salud === "degraded" ? " · inestable" : "");
+      sel.appendChild(o);
+    }
+    const guardado = IA.modeloGuardado();
+    sel.value = modelos.some((m) => m.id === guardado) ? guardado : modelos[0].id;
+  };
+  if (estado.iaModelos) { pintar(estado.iaModelos); return; }
+  pintar(IA.MODELOS_RESPALDO);
+  try { estado.iaModelos = await IA.listarModelos(); pintar(estado.iaModelos); } catch { /* se queda la lista de respaldo */ }
+}
+
+function renderizarRenders() {
+  const cont = $("#ia-renders"); cont.innerHTML = "";
+  for (const r of [...estado.renders].reverse()) {
+    const b = document.createElement("button");
+    const est = estiloPorClave(r.estilo);
+    b.innerHTML = `<img src="${r.url}" alt=""><span>${est.emoji} ${est.nombre} · ${r.fuente === "diseno" ? "diseño" : "original"}</span>`;
+    b.addEventListener("click", () => abrirRender(r.id));
+    cont.appendChild(b);
+  }
+}
+
+$("#btn-ia-clave").addEventListener("click", () => {
+  IA.guardarClave($("#ia-clave").value);
+  avisar(IA.claveGuardada() ? "Clave guardada en este teléfono" : "Clave borrada");
+});
+$("#btn-ia-saldo").addEventListener("click", async () => {
+  const clave = $("#ia-clave").value.trim();
+  if (!clave) { avisar("Pega primero la clave."); return; }
+  IA.guardarClave(clave);
+  const salida = $("#ia-saldo"); salida.textContent = "Consultando…";
+  try {
+    const s = await IA.consultarSaldo(clave);
+    const partes = [`Saldo: ${Number(s.total).toFixed(3)} pollen`];
+    if (s.gratis != null) partes.push(`gratis ${Number(s.gratis).toFixed(3)}`);
+    if (s.pagado != null) partes.push(`pagado ${Number(s.pagado).toFixed(3)}`);
+    salida.textContent = partes.join(" · ") + ` (≈ ${Math.floor(Number(s.total) / 0.005)} renders con Klein)`;
+  } catch (e) { salida.textContent = e.message; }
+});
+$("#ia-modelo").addEventListener("change", (ev) => IA.guardarModelo(ev.target.value));
+$("#ia-estilo").addEventListener("change", (ev) => { estado.estilo = ev.target.value; });
+$$("#ia-fuente button").forEach((b) => b.addEventListener("click", () => {
+  estado.iaFuente = b.dataset.fuente;
+  $$("#ia-fuente button").forEach((x) => x.classList.toggle("activa", x === b));
+}));
+
+// Imagen que se envía: la foto original o la composición actual (pintura + elementos), reducida a 1024 px.
+function blobParaIA(fuente) {
+  return new Promise((resolver) => {
+    const f = Math.min(1, 1024 / Math.max(estado.ancho, estado.alto));
+    const c = document.createElement("canvas");
+    c.width = Math.round(estado.ancho * f); c.height = Math.round(estado.alto * f);
+    const ctx = c.getContext("2d");
+    if (fuente === "diseno") pintarCompleto(ctx, f);
+    else {
+      const o = document.createElement("canvas"); o.width = estado.ancho; o.height = estado.alto;
+      o.getContext("2d").putImageData(estado.original, 0, 0);
+      ctx.drawImage(o, 0, 0, c.width, c.height);
+    }
+    c.toBlob(resolver, "image/jpeg", 0.9);
+  });
+}
+
+$("#btn-ia-generar").addEventListener("click", async () => {
+  if (estado.iaGenerando) return;
+  const clave = $("#ia-clave").value.trim();
+  if (!clave) { avisar("Necesitas una clave de Pollinations (gratis). Ver el enlace de arriba."); $("#ia-clave").focus(); return; }
+  IA.guardarClave(clave);
+  const modelo = $("#ia-modelo").value;
+  const estilo = estiloPorClave($("#ia-estilo").value);
+  const fuente = estado.iaFuente;
+  const prompt = IA.armarPrompt({ estilo, fuente, extra: $("#ia-extra").value, tipoEspacio: $("#ia-espacio").value });
+  const boton = $("#btn-ia-generar"), estadoTxt = $("#ia-estado");
+  estado.iaGenerando = true; boton.disabled = true; boton.textContent = "⏳ Generando…";
+  estadoTxt.textContent = "Enviando la foto y esperando el render (10–40 s)…";
+  const inicio = Date.now();
+  const cronometro = setInterval(() => { estadoTxt.textContent = `Generando… ${Math.round((Date.now() - inicio) / 1000)} s`; }, 1000);
+  try {
+    const blob = await blobParaIA(fuente);
+    const resultado = await IA.generarRender({ clave, modelo, blob, prompt, ancho: estado.ancho, alto: estado.alto });
+    const r = { id: nuevoId(), blob: resultado, url: URL.createObjectURL(resultado), modelo, estilo: estilo.clave, fuente, prompt, fecha: Date.now(), enviado: blob };
+    estado.renders.push(r);
+    renderizarRenders();
+    estadoTxt.textContent = `Listo en ${Math.round((Date.now() - inicio) / 1000)} s.`;
+    abrirRender(r.id);
+  } catch (e) {
+    console.error(e);
+    estadoTxt.textContent = "";
+    avisar(e.message || "No se pudo generar el render.", 5000);
+  } finally {
+    clearInterval(cronometro);
+    estado.iaGenerando = false; boton.disabled = false; boton.textContent = "🤖 Generar render";
+  }
+});
+
+// Visor: comparar lo enviado con el render
+let renderAbierto = null;
+async function abrirRender(id) {
+  const r = estado.renders.find((x) => x.id === id);
+  if (!r) return;
+  renderAbierto = r;
+  const est = estiloPorClave(r.estilo);
+  $("#titulo-render").textContent = `${est.emoji} ${est.nombre} · ${r.fuente === "diseno" ? "desde mi diseño" : "desde la foto original"}`;
+  if (!r.enviado) r.enviado = await blobParaIA(r.fuente);
+  const antes = $("#render-antes");
+  if (antes.src) URL.revokeObjectURL(antes.src);
+  antes.src = URL.createObjectURL(r.enviado);
+  $("#render-despues").src = r.url;
+  $("#render-divisor").value = 50; moverDivisorRender(50);
+  $("#dlg-render").showModal();
+}
+function moverDivisorRender(v) {
+  $("#render-despues").style.clipPath = `inset(0 0 0 ${v}%)`;
+  $("#render-linea").style.left = v + "%";
+}
+$("#render-divisor").addEventListener("input", (ev) => moverDivisorRender(+ev.target.value));
+$("#btn-render-descargar").addEventListener("click", () => {
+  if (!renderAbierto) return;
+  const a = document.createElement("a");
+  a.href = renderAbierto.url; a.download = nombreArchivo("jpg").replace(/\.jpg$/, "-render.jpg");
+  document.body.appendChild(a); a.click(); a.remove();
+  avisar("Render guardado en Descargas");
+});
+$("#btn-render-compartir").addEventListener("click", async () => {
+  if (!renderAbierto) return;
+  const archivo = new File([renderAbierto.blob], nombreArchivo("jpg").replace(/\.jpg$/, "-render.jpg"), { type: renderAbierto.blob.type || "image/jpeg" });
+  if (navigator.canShare && navigator.canShare({ files: [archivo] })) {
+    try { await navigator.share({ files: [archivo], title: "DecoraFoto · render IA" }); } catch { /* cancelado */ }
+  } else { $("#btn-render-descargar").click(); }
+});
+$("#btn-render-base").addEventListener("click", async () => {
+  if (!renderAbierto) return;
+  if (estado.capas.length && !confirm("Se usará el render como nueva foto base y se quitarán las capas actuales (los renders se conservan). ¿Continuar?")) return;
+  cargando(true); await esperar(20);
+  try {
+    const bmp = await createImageBitmap(renderAbierto.blob);
+    const f = Math.min(1, MAX_LADO / Math.max(bmp.width, bmp.height));
+    const c = document.createElement("canvas"); c.width = Math.round(bmp.width * f); c.height = Math.round(bmp.height * f);
+    c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+    const datos = { capas: [], luz: { brillo: 0, calidez: 0 }, estilo: estado.estilo, id: estado.proyectoId, nombre: estado.nombreProyecto };
+    $("#dlg-render").close();
+    iniciarProyecto(c.getContext("2d").getImageData(0, 0, c.width, c.height), datos, true);
+    avisar("Ahora puedes pintar y decorar sobre el render");
+  } catch (e) { console.error(e); avisar("No se pudo usar el render como base."); }
+  finally { cargando(false); }
+});
+$("#btn-render-eliminar").addEventListener("click", () => {
+  if (!renderAbierto) return;
+  URL.revokeObjectURL(renderAbierto.url);
+  estado.renders = estado.renders.filter((x) => x !== renderAbierto);
+  renderAbierto = null;
+  $("#dlg-render").close();
+  renderizarRenders();
+});
 
 // ---------- Botones flotantes ----------
 $("#btn-deshacer").addEventListener("click", deshacer);
